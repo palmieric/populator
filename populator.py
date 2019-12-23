@@ -3,11 +3,17 @@ import requests
 import argparse
 import json
 import random
+import re
 
+class URLValidator(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if not re.match("^(https?):/{2}", values):
+            raise ValueError("URL must include {http|https}")
+        setattr(namespace, self.dest, values)
 
 parser = argparse.ArgumentParser(description='Create a customizable number of services, rules, applications, plans')
-parser.add_argument('--url',type=str,
-                    help='Base URL of the admin portal (including protocol)', required=True)
+parser.add_argument('--url',type=str, action=URLValidator,
+                    help='Base URL of the admin portal (including protocol http(s)://)', required=True)
 parser.add_argument('--token',type=str,
                     help='A personal access token with RW permission on URL', required=True)
 parser.add_argument('--services', type=int, help='Number of services', default=1)
@@ -23,8 +29,6 @@ n_plans = args.plans
 n_rules = args.rules
 n_applications = args.apps
 base_name = 'fakeservice'
-
-
 
 for i in range(n_services):
     service_name = base_name + '_{0:04}'.format(i)
