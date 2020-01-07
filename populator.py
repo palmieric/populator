@@ -48,12 +48,12 @@ n_applications = args.apps
 base_name = args.service_name
 
 # Get account ids
-    req = requests.get(base_url + "/admin/api/accounts.json", data={
-        "access_token": access_token}, verify=args.k)
-    ret = json.loads(req.text)
-    account_ids = []
-    for account in ret["accounts"]:
-        account_ids.append(account["account"]["id"])
+req = requests.get(base_url + "/admin/api/accounts.json", data={
+    "access_token": access_token}, verify=args.k)
+ret = json.loads(req.text)
+account_ids = []
+for account in ret["accounts"]:
+    account_ids.append(account["account"]["id"])
 
 for i in range(n_services):
     service_name = base_name + '_{0:04}'.format(i)
@@ -61,7 +61,8 @@ for i in range(n_services):
     req = requests.post(
         base_url + "/admin/api/services.json", data={
             'access_token': access_token, 'name': service_name,
-            'deployment_option': 'self_managed', 'backend_version': 1,
+            # v < 2.5 doesn't have 'deployment_option': 'self_managed',
+            'backend_version': 1,
             'system_name': service_name}, verify=args.k)
     ret = json.loads(req.text)
     service_id = ret["service"]["id"]
