@@ -47,6 +47,14 @@ n_rules = args.rules
 n_applications = args.apps
 base_name = args.service_name
 
+# Get account ids
+    req = requests.get(base_url + "/admin/api/accounts.json", data={
+        "access_token": access_token}, verify=args.k)
+    ret = json.loads(req.text)
+    account_ids = []
+    for account in ret["accounts"]:
+        account_ids.append(account["account"]["id"])
+
 for i in range(n_services):
     service_name = base_name + '_{0:04}'.format(i)
     # Create Service
@@ -94,14 +102,6 @@ for i in range(n_services):
         print("Application plan {0} created".format(
             ret["application_plan"]["id"]))
         plan_ids.append(ret["application_plan"]["id"])
-
-    # Get account ids
-    req = requests.get(base_url + "/admin/api/accounts.json", data={
-        "access_token": access_token}, verify=args.k)
-    ret = json.loads(req.text)
-    account_ids = []
-    for account in ret["accounts"]:
-        account_ids.append(account["account"]["id"])
 
     # Create applications
     for j in range(n_applications):
