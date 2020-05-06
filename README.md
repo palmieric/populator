@@ -1,8 +1,6 @@
 # populator
 An utility to populate a 3scale installation with synthetic data.<br>
 The tool will create:<br>
-
-
 <ul>
     <li> N services (default: 1)</li>
     <li> 1 metric per service</li>
