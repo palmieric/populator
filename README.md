@@ -1,5 +1,5 @@
 # populator
-An utility to populate a 3scale installation with synthetic data.<br>
+An utility to populate a 3scale instance with synthetic data.<br>
 The tool will create:<br>
 
 
