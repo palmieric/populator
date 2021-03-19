@@ -15,7 +15,6 @@ The tool will create:<br>
 
 <b>Known issues:</b>
 <ul>
-    <li>The api errors are not handled</li>
     <li>The services are not promoted to staging neither production</li>
     <li>The services are not intended to be consistent or working</li>
     <li>It doesn't work with 3scale amp <= 2.5</li>
