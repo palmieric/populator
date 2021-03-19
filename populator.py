@@ -2,7 +2,6 @@
 import requests
 import argparse
 import json
-# import multiprocessing
 import random
 import re
 import time
@@ -17,14 +16,16 @@ class URLValidator(argparse.Action):
             raise ValueError("URL must include {http|https}")
         setattr(namespace, self.dest, values)
 
+
 def dump_log(failed=[]):
     dump = {'url': base_url,
             'access_token': access_token,
             'service_ids': service_ids,
             'failed': failed}
-    
+
     with open('populator.{0}.log'.format(time.time()), 'w') as f:
         json.dump(dump, f)
+
 
 def rollback(service_ids):
     failed = set()
@@ -54,12 +55,14 @@ def rollback(service_ids):
 
     dump_log(failed)
 
+
 def failure(req, obj_type, service_ids):
     print("Cannot create {0}: [{1}] {2}". format(
         obj_type, req.status_code, req.text))
     if args.failure_rollback:
         rollback(service_ids)
     exit()
+
 
 parser = argparse.ArgumentParser(
     description='Create a customizable number of services, rules, '
@@ -157,7 +160,7 @@ for i in range(n_services):
             print("Mapping rule {0} created".format(ret["mapping_rule"]["id"]))
         else:
             failure(req, 'mapping rule', service_ids)
-    
+
     plan_ids = []
     for j in range(n_plans):
         req = requests.post(
