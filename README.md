@@ -22,8 +22,8 @@ The only requirement is to have python3 installed.
 
 To run **populator**:
 
-- clone the repo: 
-  - git clone https://github.com/palmieric/populator.git
+- clone the repo:
+  - git clone <https://github.com/palmieric/populator.git>
 
 - cd into the directory:
   - cd populator
