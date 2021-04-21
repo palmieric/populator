@@ -34,7 +34,7 @@ def dump_log(failed=[]):
 
 
 def rollback(service_ids):
-    """Roll back the execution of populato
+    """Roll back the execution of populator
 
     Args:
         service_ids (list of integer): the list of services to delete
