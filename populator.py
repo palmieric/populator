@@ -18,6 +18,12 @@ class URLValidator(argparse.Action):
 
 
 def dump_log(failed=[]):
+    """Create a reusable logfile to continue or rollback a populator execution
+
+    Args:
+        failed (list, optional): The list of failed objects creation.
+        Defaults to [].
+    """
     dump = {'url': base_url,
             'access_token': access_token,
             'service_ids': service_ids,
@@ -28,16 +34,20 @@ def dump_log(failed=[]):
 
 
 def rollback(service_ids):
+    """Roll back the execution of populato
+
+    Args:
+        service_ids (list of integer): the list of services to delete
+    """
     failed = set()
-    time.sleep(60)
     for id in service_ids:
-        #/admin/api/services/{id}.xml
-        retry = 0;
+        # /admin/api/services/{id}.xml
+        retry = 0
         while retry < 5:
             time.sleep(5 * retry)
             req = requests.delete(
-            base_url + "/admin/api/services/{0}.json".format(id), data={
-                'access_token': access_token}, verify=args.k)
+                base_url + "/admin/api/services/{0}.json".format(id), data={
+                    'access_token': access_token}, verify=args.k)
             if req.ok:
                 print("Service {0} deleted".format(id))
                 failed.discard(id)
@@ -45,8 +55,8 @@ def rollback(service_ids):
                 print("Cannot delete service: {0}: [{1}]". format(
                     id, req.status_code))
                 retry += 1
-                print ("Will wait {0} seconds then try again. {1}"
-                    "  retries remaining.".format(5 * retry, 5 - retry))
+                print("Will wait {0} seconds then try again. {1} "
+                      "retries remaining.".format(5 * retry, 5 - retry))
                 failed.add(id)
     if len(failed):
         print("Cannot delete services: {0}". format(failed))
@@ -57,6 +67,13 @@ def rollback(service_ids):
 
 
 def failure(req, obj_type, service_ids):
+    """Print information about an incurred failure
+
+    Args:
+        req (request): the request object
+        obj_type (string): the object type failed to create
+        service_ids (integer): the service id the object belongs
+    """
     print("Cannot create {0}: [{1}] {2}". format(
         obj_type, req.status_code, req.text))
     if args.failure_rollback:
@@ -122,7 +139,7 @@ for i in range(n_services):
         base_url + "/admin/api/services.json", data={
             'access_token': access_token, 'name': service_name,
             'deployment_option': 'self_managed',
-            #ver < 2.5 doesn't have 'deployment_option'
+            # ver < 2.5 doesn't have 'deployment_option'
             'backend_version': 1,
             'system_name': service_name}, verify=args.k)
     if req.ok:
@@ -190,9 +207,10 @@ for i in range(n_services):
                 'description': 'This is a description'}, verify=args.k)
         ret = req.json()
         if req.ok:
-            print("Application {0} created for account {1} with plan {2}".format(
-                ret["application"]["id"], ret["application"]["account_id"],
-                ret["application"]["plan_id"]))
+            print(
+                "Application {0} created for account {1} with plan {2}".
+                format(ret["application"]["id"], ret["application"][
+                    "account_id"], ret["application"]["plan_id"]))
         else:
             failure(req, 'application plan', service_ids)
 
