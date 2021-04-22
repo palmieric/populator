@@ -84,31 +84,33 @@ def failure(req, obj_type, service_ids):
 parser = argparse.ArgumentParser(
     description='Create a customizable number of services, rules, '
     'applications, plans')
-parser.add_argument('--url', type=str, action=URLValidator,
-                    help='Base URL of the admin portal'
-                    '(including protocol http(s)://)', required=True)
-parser.add_argument('--token', type=str, help='A personal access token with '
-                    'RW permission on URL', required=True)
 parser.add_argument(
-    '--services', type=int, help='Number of services', default=1)
+    '-u', '--url', type=str, action=URLValidator,
+    help='Base URL of the admin portal (including protocol http(s)://)',
+    required=True)
 parser.add_argument(
-    '--apps', type=int, help='Number of applications', default=1)
+    '-t', '--token', type=str,
+    help='A personal access token with RW permission on URL', required=True)
 parser.add_argument(
-    '--rules', type=int, help='Number of rules', default=1)
+    '-s', '--services', type=int, help='Number of services', default=1)
 parser.add_argument(
-    '--plans', type=int, help='Number of application plans', default=1)
+    '-a', '--apps', type=int, help='Number of applications', default=1)
 parser.add_argument(
-    '-k', help='Insecure connections', action='store_false')
+    '-r', '--rules', type=int, help='Number of rules', default=1)
 parser.add_argument(
-    '--service-name', type=str, help='Service base name', default="fakesvc")
+    '-p', '--plans', type=int, help='Number of application plans', default=1)
 parser.add_argument(
-    '--failure-rollback', type=bool,
+    '-k', '--insecure', help='Insecure connections', action='store_false')
+parser.add_argument(
+    '-n', '--service-name', type=str, help='Service base name',
+    default="fakesvc")
+parser.add_argument(
+    '-f', '--failure-rollback', type=bool,
     help='Rollback on failure, default to False', default=False)
 parser.add_argument(
-    '--save-status', type=bool,
+    '-S', '--save-status', type=bool,
     help='Save the status of the execution to revert it later', default=False)
-# parser.add_argument(
-#    '--nproc', help='Number of processes to use', type=int, default=1)
+
 
 args = parser.parse_args()
 
