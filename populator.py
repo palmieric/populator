@@ -6,9 +6,6 @@ import random
 import re
 import time
 
-requests.packages.urllib3.disable_warnings(
-    requests.packages.urllib3.exceptions.InsecureRequestWarning)
-
 
 class URLValidator(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -47,7 +44,7 @@ def rollback(service_ids):
             time.sleep(5 * retry)
             req = requests.delete(
                 base_url + "/admin/api/services/{0}.json".format(id), data={
-                    'access_token': access_token}, verify=args.k)
+                    'access_token': access_token}, verify=args.insecure)
             if req.ok:
                 print("Service {0} deleted".format(id))
                 failed.discard(id)
@@ -81,6 +78,9 @@ def failure(req, obj_type, service_ids):
     exit()
 
 
+requests.packages.urllib3.disable_warnings(
+        requests.packages.urllib3.exceptions.InsecureRequestWarning)
+
 parser = argparse.ArgumentParser(
     description='Create a customizable number of services, rules, '
     'applications, plans')
@@ -113,7 +113,6 @@ parser.add_argument(
 
 
 args = parser.parse_args()
-
 base_url = args.url
 access_token = args.token
 n_services = args.services
@@ -122,12 +121,13 @@ n_rules = args.rules
 n_applications = args.apps
 base_name = args.service_name
 
+
 # Get account ids
 req = requests.get(base_url + "/admin/api/accounts.json", data={
-    "access_token": access_token}, verify=args.k)
+    "access_token": access_token}, verify=args.insecure)
 if not req.ok:
-    print("Cannot get the accounts: {0}", req.status_code)
-    exit
+    print("Cannot get the accounts: {0}: {1}", req.status_code, req.text)
+    exit()
 account_ids = []
 service_ids = []
 
@@ -143,7 +143,7 @@ for i in range(n_services):
             'deployment_option': 'self_managed',
             # ver < 2.5 doesn't have 'deployment_option'
             'backend_version': 1,
-            'system_name': service_name}, verify=args.k)
+            'system_name': service_name}, verify=args.insecure)
     if req.ok:
         ret = req.json()
         service_id = ret["service"]["id"]
@@ -157,7 +157,7 @@ for i in range(n_services):
         base_url + "/admin/api/services/{0}/metrics.json".format(service_id),
         data={
             'access_token': access_token, 'unit': 'hits',
-            'friendly_name': service_name + '_hits'}, verify=args.k)
+            'friendly_name': service_name + '_hits'}, verify=args.insecure)
     if req.ok:
         ret = req.json()
         metric_id = ret["metric"]["id"]
@@ -173,7 +173,7 @@ for i in range(n_services):
                 'access_token': access_token, 'http_method': 'PUT',
                 'pattern': "/{0}/{1}/".format(service_name, j),
                 'metric_id': metric_id, 'delta': 1},
-            verify=args.k)
+            verify=args.insecure)
         if req.ok:
             ret = req.json()
             print("Mapping rule {0} created".format(ret["mapping_rule"]["id"]))
@@ -188,7 +188,7 @@ for i in range(n_services):
                 'access_token': access_token,
                 'name': service_name + "_plan_{0:03}".format(j),
                 'approval_required': 'false', 'state_event': 'publish'},
-            verify=args.k)
+            verify=args.insecure)
         ret = req.json()
         if req.ok:
             print("Application plan {0} created".format(
@@ -206,7 +206,7 @@ for i in range(n_services):
                 'access_token': access_token,
                 'plan_id': random.choice(plan_ids),
                 'name': "{0}_app_{1:03}".format(service_name, j),
-                'description': 'This is a description'}, verify=args.k)
+                'description': 'This is a description'}, verify=args.insecure)
         ret = req.json()
         if req.ok:
             print(
@@ -216,4 +216,5 @@ for i in range(n_services):
         else:
             failure(req, 'application plan', service_ids)
 
-dump_log()
+if args.save_status:
+    dump_log()
