@@ -14,31 +14,35 @@ class URLValidator(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-def dump_log(failed=[]):
+def dump_log(service_ids, backend_ids, failed=[]):
     """Create a reusable logfile to continue or rollback a populator execution
 
     Args:
+        service_ids (list of integer): the list of services created
+        backend_ids (list of integer): the list of backends created
         failed (list, optional): The list of failed objects creation.
         Defaults to [].
     """
     dump = {'url': base_url,
             'access_token': access_token,
             'service_ids': service_ids,
+            'backend_ids': backend_ids,
             'failed': failed}
 
     with open('populator.{0}.log'.format(time.time()), 'w') as f:
         json.dump(dump, f)
 
 
-def rollback(service_ids):
+def rollback(service_ids, backend_ids):
     """Roll back the execution of populator
 
     Args:
         service_ids (list of integer): the list of services to delete
+        backend_ids (list of integer): the list of backends to delete
     """
-    failed = set()
+    failed = {'backend_ids': set(), 'service_ids': set()}
     for id in service_ids:
-        # /admin/api/services/{id}.xml
+        # /admin/api/services/{id}.json
         retry = 0
         while retry < 5:
             time.sleep(5 * retry)
@@ -47,34 +51,54 @@ def rollback(service_ids):
                     'access_token': access_token}, verify=args.insecure)
             if req.ok:
                 print("Service {0} deleted".format(id))
-                failed.discard(id)
+                failed["service_ids"].discard(id)
             else:
                 print("Cannot delete service: {0}: [{1}]". format(
                     id, req.status_code))
                 retry += 1
                 print("Will wait {0} seconds then try again. {1} "
                       "retries remaining.".format(5 * retry, 5 - retry))
-                failed.add(id)
+                failed["service_ids"].add(id)
+    for id in backend_ids:
+        # /admin/api/backend_apis/{id}.json
+        retry = 0
+        while retry < 5:
+            time.sleep(5 * retry)
+            req = requests.delete(
+                base_url + "/admin/api/backend_apis/{id}.json".format(id),
+                data={
+                    'access_token': access_token}, verify=args.insecure)
+            if req.ok:
+                print("Backend {0} deleted".format(id))
+                failed["backend_ids"].discard(id)
+            else:
+                print("Cannot delete backend: {0}: [{1}]". format(
+                    id, req.status_code))
+                retry += 1
+                print("Will wait {0} seconds then try again. {1} "
+                      "retries remaining.".format(5 * retry, 5 - retry))
+                failed["backend_ids"].add(id)
     if len(failed):
         print("Cannot delete services: {0}". format(failed))
     else:
         print("All services deleted")
 
-    dump_log(failed)
+    dump_log(service_ids, backend_ids, failed)
 
 
-def failure(req, obj_type, service_ids):
+def failure(req, obj_type, service_ids, backend_ids):
     """Print information about an incurred failure
 
     Args:
         req (request): the request object
         obj_type (string): the object type failed to create
-        service_ids (integer): the service id the object belongs
+        service_ids (list of integer): the list of services to delete
+        backend_ids (list of integer): the list of backends to delete
     """
     print("Cannot create {0}: [{1}] {2}". format(
         obj_type, req.status_code, req.text))
     if args.failure_rollback:
-        rollback(service_ids)
+        rollback(service_ids, backend_ids)
     exit()
 
 
@@ -93,6 +117,9 @@ parser.add_argument(
     help='A personal access token with RW permission on URL', required=True)
 parser.add_argument(
     '-s', '--services', type=int, help='Number of services', default=1)
+parser.add_argument(
+    '-b', '--backends', type=int, help='Number of backends per service',
+    default=1)    
 parser.add_argument(
     '-a', '--apps', type=int, help='Number of applications', default=1)
 parser.add_argument(
@@ -116,6 +143,7 @@ args = parser.parse_args()
 base_url = args.url
 access_token = args.token
 n_services = args.services
+n_backends = args.backends
 n_plans = args.plans
 n_rules = args.rules
 n_applications = args.apps
@@ -130,6 +158,7 @@ if not req.ok:
     exit()
 account_ids = []
 service_ids = []
+backend_ids = []
 
 for account in req.json()["accounts"]:
     account_ids.append(account["account"]["id"])
@@ -165,6 +194,32 @@ for i in range(n_services):
     else:
         failure(req, 'metric', service_ids)
 
+    # Create Backemds
+    for j in range(n_backends):
+        req = requests.post(
+            base_url + "/admin/api/backend_apis.json", data={
+                'access_token': access_token,
+                'name': 'backend-{0}-{i}'.format(service_id, j),
+                'private_endpoint': "https://echo-api.3scale.net:443"},
+            verify=args.insecure)
+        if not req.ok:
+            failure(req, 'backend', service_ids, backend_ids)
+        ret = req.json()
+        backend_id = ret["backend_api"]["id"]
+        req = requests.post(
+            base_url + "/admin/api/services/{0}/backend_usages.json"
+            .format(service_id), data={
+                'access_token': access_token,
+                'backend_api_id': backend_id,
+                'ṕath': '/backend/{0}'.format(backend_id)},
+            verify=args.insecure)
+        if req.ok:
+            backend_ids.append(backend_id)
+            print("Backend {0} created and linked to Sevice {1}"
+            .format(backend_id, service_id))
+        else:
+            failure(req, 'backend link', service_ids, backend_ids)
+
     # Create Mapping rules
     for j in range(n_rules):
         req = requests.post(
@@ -189,8 +244,8 @@ for i in range(n_services):
                 'name': service_name + "_plan_{0:03}".format(j),
                 'approval_required': 'false', 'state_event': 'publish'},
             verify=args.insecure)
-        ret = req.json()
         if req.ok:
+            ret = req.json()
             print("Application plan {0} created".format(
                 ret["application_plan"]["id"]))
             plan_ids.append(ret["application_plan"]["id"])
@@ -207,8 +262,8 @@ for i in range(n_services):
                 'plan_id': random.choice(plan_ids),
                 'name': "{0}_app_{1:03}".format(service_name, j),
                 'description': 'This is a description'}, verify=args.insecure)
-        ret = req.json()
         if req.ok:
+            ret = req.json()
             print(
                 "Application {0} created for account {1} with plan {2}".
                 format(ret["application"]["id"], ret["application"][
@@ -217,4 +272,4 @@ for i in range(n_services):
             failure(req, 'application plan', service_ids)
 
 if args.save_status:
-    dump_log()
+    dump_log(service_ids, backend_ids)
