@@ -127,13 +127,13 @@ parser.add_argument(
 parser.add_argument(
     '-p', '--plans', type=int, help='Number of application plans', default=1)
 parser.add_argument(
-    '-k', '--insecure', help='Insecure connections', action='store_false')
-parser.add_argument(
     '-n', '--service-name', type=str, help='Service base name',
     default="fakesvc")
 parser.add_argument(
-    '-f', '--failure-rollback', type=bool,
-    help='Rollback on failure, default to False', default=False)
+    '-k', '--insecure', help='Insecure connections', action='store_false')
+parser.add_argument(
+    '-f', '--failure-rollback',
+    help='Rollback on failure, default to False', action='store_true')
 parser.add_argument(
     '-S', '--save-status',
     help='Save the status of the execution to revert it later',
