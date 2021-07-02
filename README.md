@@ -4,6 +4,7 @@ An utility to populate a 3scale instance with synthetic data. The tool will crea
 
 - **N** services (default: 1)
 - **1** metric per service
+- **N** backends per service (default: 1)
 - **N** rules per service (default: 1)
 - **N** application plans per service (default: 1)
 - **N** application per service (default: 1)
@@ -37,28 +38,31 @@ To run **populator**:
 ## Usage
 
 ~~~bash
-usage: populator.py [-h] --url URL --token TOKEN [--services SERVICES]
-                    [--apps APPS] [--rules RULES] [--plans PLANS] [-k]
-                    [--service-name SERVICE_NAME]
-                    [--failure-rollback FAILURE_ROLLBACK]
-                    [--save-status SAVE_STATUS]
+usage: populator.py [-h] -u URL -t TOKEN [-s SERVICES] [-b BACKENDS] [-a APPS]
+                    [-r RULES] [-p PLANS] [-n SERVICE_NAME] [-k] [-f] [-S]
 
 Create a customizable number of services, rules, applications, plans
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --url URL             Base URL of the admin portal(including protocol
+  -h, --help            show the help message and exit
+  -u URL, --url URL     Base URL of the admin portal (including protocol
                         http(s)://)
-  --token TOKEN         A personal access token with RW permission on URL
-  --services SERVICES   Number of services
-  --apps APPS           Number of applications
-  --rules RULES         Number of rules
-  --plans PLANS         Number of application plans
-  -k                    Insecure connections
-  --service-name SERVICE_NAME
+  -t TOKEN, --token TOKEN
+                        A personal access token with RW permission on URL
+  -s SERVICES, --services SERVICES
+                        Number of services
+  -b BACKENDS, --backends BACKENDS
+                        Number of backends per service
+  -a APPS, --apps APPS  Number of applications
+  -r RULES, --rules RULES
+                        Number of rules
+  -p PLANS, --plans PLANS
+                        Number of application plans
+  -n SERVICE_NAME, --service-name SERVICE_NAME
                         Service base name
-  --failure-rollback FAILURE_ROLLBACK
+  -k, --insecure        Insecure connections
+  -f, --failure-rollback
                         Rollback on failure, default to False
-  --save-status SAVE_STATUS
-                        Save the status of the execution to revert it later
+  -S, --save-status     Save the status of the execution to revert it later
+
 ~~~
