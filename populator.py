@@ -65,7 +65,7 @@ def rollback(service_ids, backend_ids):
         while retry < 5:
             time.sleep(5 * retry)
             req = requests.delete(
-                base_url + "/admin/api/backend_apis/{id}.json".format(id),
+                base_url + "/admin/api/backend_apis/{0}.json".format(id),
                 data={
                     'access_token': access_token}, verify=args.insecure)
             if req.ok:
@@ -119,7 +119,7 @@ parser.add_argument(
     '-s', '--services', type=int, help='Number of services', default=1)
 parser.add_argument(
     '-b', '--backends', type=int, help='Number of backends per service',
-    default=1)    
+    default=1)
 parser.add_argument(
     '-a', '--apps', type=int, help='Number of applications', default=1)
 parser.add_argument(
