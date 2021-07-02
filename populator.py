@@ -135,9 +135,9 @@ parser.add_argument(
     '-f', '--failure-rollback', type=bool,
     help='Rollback on failure, default to False', default=False)
 parser.add_argument(
-    '-S', '--save-status', type=bool,
-    help='Save the status of the execution to revert it later', default=False)
-
+    '-S', '--save-status',
+    help='Save the status of the execution to revert it later',
+    action='store_true')
 
 args = parser.parse_args()
 base_url = args.url
@@ -179,7 +179,7 @@ for i in range(n_services):
         service_ids.append(service_id)
         print("Service {0} created".format(service_id))
     else:
-        failure(req, 'service', service_ids)
+        failure(req, 'service', service_ids, backend_ids)
 
     # Create Metric
     req = requests.post(
@@ -192,14 +192,14 @@ for i in range(n_services):
         metric_id = ret["metric"]["id"]
         print("Metric {0} created".format(metric_id))
     else:
-        failure(req, 'metric', service_ids)
+        failure(req, 'metric', service_ids, backend_ids)
 
     # Create Backemds
     for j in range(n_backends):
         req = requests.post(
             base_url + "/admin/api/backend_apis.json", data={
                 'access_token': access_token,
-                'name': 'backend-{0}-{i}'.format(service_id, j),
+                'name': 'backend-{0}-{1}'.format(service_id, j),
                 'private_endpoint': "https://echo-api.3scale.net:443"},
             verify=args.insecure)
         if not req.ok:
@@ -211,12 +211,12 @@ for i in range(n_services):
             .format(service_id), data={
                 'access_token': access_token,
                 'backend_api_id': backend_id,
-                'ṕath': '/backend/{0}'.format(backend_id)},
+                'path': '/backend/{0}'.format(backend_id)},
             verify=args.insecure)
         if req.ok:
             backend_ids.append(backend_id)
             print("Backend {0} created and linked to Sevice {1}"
-            .format(backend_id, service_id))
+                  .format(backend_id, service_id))
         else:
             failure(req, 'backend link', service_ids, backend_ids)
 
@@ -233,7 +233,7 @@ for i in range(n_services):
             ret = req.json()
             print("Mapping rule {0} created".format(ret["mapping_rule"]["id"]))
         else:
-            failure(req, 'mapping rule', service_ids)
+            failure(req, 'mapping rule', service_ids, backend_ids)
 
     plan_ids = []
     for j in range(n_plans):
@@ -250,7 +250,7 @@ for i in range(n_services):
                 ret["application_plan"]["id"]))
             plan_ids.append(ret["application_plan"]["id"])
         else:
-            failure(req, 'application plan', service_ids)
+            failure(req, 'application plan', service_ids, backend_ids)
 
     # Create applications
     for j in range(n_applications):
@@ -269,7 +269,7 @@ for i in range(n_services):
                 format(ret["application"]["id"], ret["application"][
                     "account_id"], ret["application"]["plan_id"]))
         else:
-            failure(req, 'application plan', service_ids)
+            failure(req, 'application plan', service_ids, backend_ids)
 
 if args.save_status:
     dump_log(service_ids, backend_ids)
